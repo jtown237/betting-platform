@@ -98,6 +98,7 @@ class Odds(Base):
     bet_type = Column(Enum(BetType), nullable=False)
     line = Column(Float, nullable=False)
     odds = Column(Float, nullable=False)
+    side = Column(String(100), nullable=True)  # Team/side name (e.g., "Chiefs", "Over 45.5")
     timestamp = Column(DateTime, default=utc_now)
     game_start_time = Column(DateTime, nullable=True)
 
