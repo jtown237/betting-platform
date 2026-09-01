@@ -17,6 +17,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     initial_bankroll = Column(Float, nullable=False)
+    total_returns = Column(Float, nullable=True)
     created_at = Column(DateTime, default=utc_now)
     updated_at = Column(DateTime, default=utc_now, onupdate=utc_now)
 
@@ -98,6 +99,7 @@ class Odds(Base):
     line = Column(Float, nullable=False)
     odds = Column(Float, nullable=False)
     timestamp = Column(DateTime, default=utc_now)
+    game_start_time = Column(DateTime, nullable=True)
 
     game = relationship("Game", back_populates="odds")
 
