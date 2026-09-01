@@ -51,7 +51,7 @@ class BetResponse(BaseModel):
     status: str
     amount: Optional[float] = None
     picked_side: Optional[str] = None
-    odds_at_placement: Optional[float] = None
+    odds_locked_at: Optional[float] = None
     payout: Optional[float] = None
     created_at: Optional[str] = None
     settled_at: Optional[str] = None

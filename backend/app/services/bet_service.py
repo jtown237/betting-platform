@@ -31,7 +31,17 @@ def create_bet(
 
     Returns:
         Bet object
+
+    Raises:
+        ValueError: If game_id not found in database
+        ValueError: If invalid sportsbook or bet_type
     """
+    # Validate game exists
+    from app.models import Game
+    game = db.query(Game).filter(Game.id == game_id).first()
+    if not game:
+        raise ValueError(f"Game {game_id} not found")
+
     # Validate sportsbook
     valid_sportsbooks = [s.value for s in Sportsbook]
     if sportsbook not in valid_sportsbooks:
@@ -50,7 +60,7 @@ def create_bet(
         bet_type=BetType(bet_type),
         amount=amount,
         picked_side=picked_side,
-        odds_at_placement=odds_at_placement,
+        odds_locked_at=odds_at_placement,
         status=BetStatus.PENDING,
         created_at=datetime.now(timezone.utc)
     )
@@ -92,7 +102,7 @@ def create_custom_bet(
         bet_type=BetType.CUSTOM,
         amount=amount,
         picked_side=picked_side,
-        odds_at_placement=odds,
+        odds_locked_at=odds,
         status=BetStatus.PENDING,
         notes=notes,
         created_at=datetime.now(timezone.utc)
@@ -128,6 +138,7 @@ def settle_custom_bet(
     Raises:
         ValueError: If bet not found or doesn't belong to user
         ValueError: If invalid status
+        ValueError: If bet is not a custom bet
     """
     # Validate status
     valid_statuses = ["won", "lost", "push"]
@@ -138,6 +149,10 @@ def settle_custom_bet(
     bet = db.query(Bet).filter(Bet.id == bet_id, Bet.user_id == user_id).first()
     if not bet:
         raise ValueError(f"Bet {bet_id} not found or does not belong to user")
+
+    # Validate that bet is a custom bet
+    if bet.sportsbook != Sportsbook.CUSTOM:
+        raise ValueError(f"Cannot manually settle non-custom bet. Only custom bets can be manually settled.")
 
     # Update bet status
     bet.status = BetStatus(status)

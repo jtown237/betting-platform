@@ -157,7 +157,20 @@ class TestCreateBetService:
             odds_at_placement=-110.0
         )
 
-        assert bet.odds_at_placement == -110.0
+        assert bet.odds_locked_at == -110.0
+
+    def test_create_bet_game_not_found(self, test_db, test_user):
+        """Test creating bet on non-existent game."""
+        with pytest.raises(ValueError, match="not found"):
+            create_bet(
+                db=test_db,
+                user_id=test_user.id,
+                game_id="nonexistent_game",
+                sportsbook="DraftKings",
+                bet_type="spread",
+                amount=100.0,
+                picked_side="Chiefs"
+            )
 
 
 class TestCreateCustomBetService:
@@ -181,7 +194,7 @@ class TestCreateCustomBetService:
         assert bet.bet_type == BetType.CUSTOM
         assert bet.amount == 75.0
         assert bet.picked_side == "Team A to score first"
-        assert bet.odds_at_placement == +200.0
+        assert bet.odds_locked_at == +200.0
         assert bet.notes == "Custom prop bet"
         assert bet.status == BetStatus.PENDING
 
@@ -318,6 +331,29 @@ class TestSettleCustomBetService:
             settle_custom_bet(
                 db=test_db,
                 user_id=other_user.id,
+                bet_id=bet.id,
+                status="won",
+                payout=100.0
+            )
+
+    def test_settle_standard_game_bet_fails(self, test_db, test_user, test_game):
+        """Test settling a standard game bet (non-custom) should fail."""
+        # Create a standard game bet (not custom)
+        bet = create_bet(
+            db=test_db,
+            user_id=test_user.id,
+            game_id=test_game.id,
+            sportsbook="DraftKings",
+            bet_type="spread",
+            amount=100.0,
+            picked_side="Chiefs"
+        )
+
+        # Attempting to settle it should raise ValueError
+        with pytest.raises(ValueError, match="Cannot manually settle non-custom bet"):
+            settle_custom_bet(
+                db=test_db,
+                user_id=test_user.id,
                 bet_id=bet.id,
                 status="won",
                 payout=100.0
@@ -496,6 +532,23 @@ class TestPlaceBetEndpoint:
         assert bet_id_1 != bet_id_2
         assert len(test_db.query(Bet).filter(Bet.user_id == test_user.id).all()) == 2
 
+    def test_place_bet_nonexistent_game(self, client, auth_headers):
+        """Test placing bet on non-existent game should fail."""
+        response = client.post(
+            "/api/bets",
+            json={
+                "game_id": "nonexistent_game",
+                "sportsbook": "DraftKings",
+                "bet_type": "spread",
+                "amount": 100.0,
+                "picked_side": "Chiefs"
+            },
+            headers=auth_headers
+        )
+
+        assert response.status_code == 400
+        assert "not found" in response.json()["detail"]
+
 
 class TestPlaceCustomBetEndpoint:
     """Tests for POST /api/bets/custom endpoint."""
@@ -519,7 +572,7 @@ class TestPlaceCustomBetEndpoint:
         assert data["status"] == "pending"
         assert data["amount"] == 75.0
         assert data["picked_side"] == "Team A to win"
-        assert data["odds_at_placement"] == +150.0
+        assert data["odds_locked_at"] == +150.0
         assert data["notes"] == "Custom pick"
         assert data["game_id"] is None
 
@@ -755,13 +808,13 @@ class TestGetBetHistoryEndpoint:
         statuses = {bet["status"] for bet in data}
         assert statuses == {"won", "lost", "push"}
 
-    def test_get_bet_history_excludes_pending(self, client, test_db, test_user, auth_headers):
+    def test_get_bet_history_excludes_pending(self, client, test_db, test_user, test_game, auth_headers):
         """Test that pending bets are excluded from history."""
         # Create pending bet
         create_bet(
             db=test_db,
             user_id=test_user.id,
-            game_id="test_game",
+            game_id=test_game.id,
             sportsbook="DraftKings",
             bet_type="spread",
             amount=100.0,
@@ -1062,6 +1115,29 @@ class TestSettleBetEndpoint:
         )
 
         assert response.status_code == 400
+
+    def test_settle_standard_game_bet_endpoint_fails(self, client, test_db, test_user, test_game, auth_headers):
+        """Test that API endpoint rejects settlement of standard game bets."""
+        # Create a standard game bet
+        bet = create_bet(
+            db=test_db,
+            user_id=test_user.id,
+            game_id=test_game.id,
+            sportsbook="DraftKings",
+            bet_type="spread",
+            amount=100.0,
+            picked_side="Chiefs"
+        )
+
+        # Attempting to settle via API should fail
+        response = client.patch(
+            f"/api/bets/{bet.id}/settle",
+            json={"status": "won", "payout": 100.0},
+            headers=auth_headers
+        )
+
+        assert response.status_code == 400
+        assert "Cannot manually settle non-custom bet" in response.json()["detail"]
 
     def test_settle_bet_missing_auth(self, client, test_db, test_user):
         """Test settling without auth."""

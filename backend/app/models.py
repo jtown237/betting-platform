@@ -52,7 +52,7 @@ class Bet(Base):
     bet_type = Column(Enum(BetType), nullable=False)
     amount = Column(Float, nullable=False)
     picked_side = Column(String(255), nullable=False)
-    odds_at_placement = Column(Float, nullable=True)
+    odds_locked_at = Column(Float, nullable=True)
     status = Column(Enum(BetStatus), default=BetStatus.PENDING)
     payout = Column(Float, nullable=True)
     notes = Column(Text, nullable=True)
