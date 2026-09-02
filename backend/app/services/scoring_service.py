@@ -14,12 +14,24 @@ def utc_now():
     """Return current UTC time as timezone-aware datetime."""
     return datetime.now(timezone.utc)
 
-def fetch_game_score(game_id: str) -> dict:
+def fetch_game_score(game_id: str, sport: str = "nfl") -> dict:
     """
     Fetch game score from ESPN API.
+
+    Args:
+        game_id: The ESPN game ID
+        sport: Sport type - "nfl" or "cfb" (college football)
+
     Returns a dict with: {home_score, away_score, status}
     """
-    url = f"{settings.ESPN_API_BASE}/sports/football/nfl/games/{game_id}"
+    # Route to correct ESPN API endpoint based on sport
+    if sport.lower() == "cfb":
+        sport_path = "sports/football/college-football"
+    else:
+        # Default to NFL
+        sport_path = "sports/football/nfl"
+
+    url = f"{settings.ESPN_API_BASE}/{sport_path}/games/{game_id}"
     try:
         response = requests.get(url, timeout=10)
         response.raise_for_status()
@@ -133,11 +145,13 @@ def settle_moneyline_bet(
     home_score: int,
     away_score: int,
     picked_side: str,
-    odds: float
+    odds: float,
+    game: Game = None
 ) -> tuple:
     """
     Settle a moneyline bet.
-    picked_side: team name or identifier
+    picked_side: team name or identifier (e.g., "Chiefs", "Bills", or legacy "home"/"away")
+    game: Game object for team name matching (enables proper settlement with real team names)
     Returns (status, payout)
     """
     try:
@@ -145,13 +159,33 @@ def settle_moneyline_bet(
             # Push (tie)
             return BetStatus.PUSH, float(bet.amount)
 
-        # Simple heuristic: if picked_side contains "home" or "/" check game structure
-        # For now, assume picked_side is team name and we need to match
         home_wins = home_score > away_score
 
-        # Determine if user picked the winner
-        # This is simplified - in production you'd need better team name matching
-        picked_home = "home" in picked_side.lower() or picked_side.lower() in ["h", "home"]
+        # Determine if user picked the home team
+        picked_home = False
+
+        if game:
+            # Try to match against actual team names first
+            # Check if picked_side matches home team or away team names
+            home_match = (
+                picked_side.lower() in game.home_team.lower() or
+                game.home_team.lower() in picked_side.lower()
+            )
+            away_match = (
+                picked_side.lower() in game.away_team.lower() or
+                game.away_team.lower() in picked_side.lower()
+            )
+
+            if home_match:
+                picked_home = True
+            elif away_match:
+                picked_home = False
+            else:
+                # Fallback to legacy format if no team name match
+                picked_home = "home" in picked_side.lower() or picked_side.lower() in ["h", "home"]
+        else:
+            # Fallback for legacy support (when no game object provided)
+            picked_home = "home" in picked_side.lower() or picked_side.lower() in ["h", "home"]
 
         won = (picked_home and home_wins) or (not picked_home and not home_wins)
 
@@ -257,7 +291,7 @@ def settle_bets_for_game(
             elif bet.bet_type == BetType.MONEYLINE:
                 status, payout = settle_moneyline_bet(
                     bet, final_home_score, final_away_score,
-                    bet.picked_side, odds
+                    bet.picked_side, odds, game
                 )
             elif bet.bet_type == BetType.OVER_UNDER:
                 status, payout = settle_over_under_bet(
@@ -315,7 +349,7 @@ def poll_and_settle_scores(db: Session) -> dict:
     for game in active_games:
         try:
             summary["games_checked"] += 1
-            score_data = fetch_game_score(game.id)
+            score_data = fetch_game_score(game.id, sport=game.sport.value.lower())
 
             if score_data["status"] == GameStatus.COMPLETED.value:
                 # Update game status and scores

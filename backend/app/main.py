@@ -10,6 +10,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from app.routers import auth, odds, bets, users
 from app.jobs.odds_job import schedule_odds_polling
 from app.jobs.scoring_job import schedule_score_polling
+from app.jobs.line_locking_job import schedule_line_locking
 
 # Configure logging
 logging.basicConfig(
@@ -37,6 +38,7 @@ async def lifespan(app: FastAPI):
         scheduler = AsyncIOScheduler()
         schedule_odds_polling(scheduler)
         schedule_score_polling(scheduler)
+        schedule_line_locking(scheduler)
         scheduler.start()
         logger.info("Application startup complete - scheduler started")
     except Exception as e:
