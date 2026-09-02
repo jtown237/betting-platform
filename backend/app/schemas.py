@@ -59,3 +59,15 @@ class BetResponse(BaseModel):
     game_id: Optional[str] = None
     sportsbook: Optional[str] = None
     bet_type: Optional[str] = None
+
+
+class UserProfile(BaseModel):
+    """Response schema for user profile endpoint."""
+    email: str
+    initial_bankroll: float
+    total_returns: float
+    total_bets: int
+    bets_won: int
+    bets_lost: int
+    bets_push: int
+    roi_percent: float
