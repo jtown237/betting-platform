@@ -21,17 +21,26 @@ export default function Home() {
         <div className="flex gap-4 justify-center">
           {!isAuthenticated ? (
             <>
-              <button className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium">
+              <a
+                href="/login"
+                className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium inline-block"
+              >
                 Sign In
-              </button>
-              <button className="px-6 py-2 border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900 font-medium">
+              </a>
+              <a
+                href="/register"
+                className="px-6 py-2 border-2 border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 dark:hover:bg-primary-900 font-medium inline-block"
+              >
                 Create Account
-              </button>
+              </a>
             </>
           ) : (
-            <button className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium">
+            <a
+              href="/dashboard"
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium inline-block"
+            >
               Dashboard
-            </button>
+            </a>
           )}
         </div>
       </section>

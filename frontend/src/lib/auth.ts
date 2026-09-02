@@ -1,10 +1,12 @@
 const TOKEN_KEY = "auth_token";
 const REFRESH_TOKEN_KEY = "refresh_token";
+const USER_ID_KEY = "user_id";
 
 export interface TokenData {
   accessToken: string;
   refreshToken?: string;
   expiresAt?: number;
+  userId?: number;
 }
 
 export const tokenManager = {
@@ -22,6 +24,15 @@ export const tokenManager = {
     if (tokenData.expiresAt) {
       localStorage.setItem("token_expires_at", tokenData.expiresAt.toString());
     }
+    if (tokenData.userId) {
+      localStorage.setItem(USER_ID_KEY, tokenData.userId.toString());
+    }
+  },
+
+  getUserId: (): number | null => {
+    if (typeof window === "undefined") return null;
+    const userId = localStorage.getItem(USER_ID_KEY);
+    return userId ? parseInt(userId, 10) : null;
   },
 
   removeToken: (): void => {
@@ -29,6 +40,7 @@ export const tokenManager = {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem("token_expires_at");
+    localStorage.removeItem(USER_ID_KEY);
   },
 
   getRefreshToken: (): string | null => {
