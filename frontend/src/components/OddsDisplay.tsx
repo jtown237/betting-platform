@@ -144,14 +144,16 @@ export default function OddsDisplay({ sport }: OddsDisplayProps) {
                   {groupedOdds[book] && groupedOdds[book].length > 0 ? (
                     <div className="space-y-2 text-sm">
                       {groupedOdds[book].map((odd, idx) => {
-                        // side carries the team for moneyline and spread, and
-                        // already includes the number for totals ("Over 8.0").
+                        // side is already self-describing for every market:
+                        // "Pirates", "Pirates -2.5", "Over 7.5". Appending the
+                        // line here would print the number twice.
                         const label =
-                          odd.bet_type === "over_under"
-                            ? odd.side || "O/U"
+                          odd.side ||
+                          (odd.bet_type === "moneyline"
+                            ? "ML"
                             : odd.bet_type === "spread"
-                            ? `${odd.side || "Spread"} ${odd.line > 0 ? "+" : ""}${odd.line}`
-                            : odd.side || "ML";
+                            ? "Spread"
+                            : "O/U");
 
                         return (
                           <div key={idx} className="flex justify-between items-center gap-2">

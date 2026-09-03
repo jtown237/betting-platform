@@ -202,8 +202,14 @@ class TestMlbEndpoint:
             "San Francisco Giants",
         }
 
+        # Assert the exact value, not just that it is non-empty: `side`
+        # already carries the signed line, so a caller that appends
+        # odd["line"] as well renders the number twice.
         spreads = [o for o in odds if o["bet_type"] == "spread"]
-        assert all(o["side"] for o in spreads), "run lines have no team"
+        assert {o["side"] for o in spreads} == {
+            "Los Angeles Dodgers -1.5",
+            "San Francisco Giants +1.5",
+        }
 
         totals = [o for o in odds if o["bet_type"] == "over_under"]
         assert {o["side"] for o in totals} == {"Over 8.5", "Under 8.5"}
