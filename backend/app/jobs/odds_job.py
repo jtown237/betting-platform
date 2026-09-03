@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from app.config import get_settings
 from app.database import SessionLocal
 from app.services.odds_service import fetch_odds_from_api, store_odds
 
@@ -42,17 +43,18 @@ def poll_odds():
 
 def schedule_odds_polling(scheduler: AsyncIOScheduler):
     """
-    Schedule the odds polling job to run every 10 minutes.
+    Schedule the odds polling job at settings.ODDSAPI_POLL_MINUTES.
 
     Args:
         scheduler: AsyncIOScheduler instance to add the job to
     """
     try:
+        minutes = get_settings().ODDSAPI_POLL_MINUTES
         scheduler.add_job(
             poll_odds,
-            trigger=IntervalTrigger(minutes=10),
+            trigger=IntervalTrigger(minutes=minutes),
             id="poll_odds_job",
-            name="Poll OddsAPI every 10 minutes",
+            name=f"Poll OddsAPI every {minutes} minutes",
             replace_existing=True,
             # Without this the first poll is one full interval away, so every
             # redeploy restarts the clock and leaves the board empty for ten

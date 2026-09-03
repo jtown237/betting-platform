@@ -26,7 +26,8 @@ SPORTSBOOK_MAPPING = {
     "kalshi": Sportsbook.KALSHI
 }
 
-# Markets we care about
+# Default markets. The live list comes from settings.ODDSAPI_MARKETS;
+# this remains the parsing contract for the three markets we understand.
 SUPPORTED_MARKETS = ["h2h", "spreads", "totals"]
 
 
@@ -52,8 +53,8 @@ def fetch_odds_from_api(sport: str) -> Dict[str, Any]:
     api_url = f"https://api.the-odds-api.com/v4/sports/{sport}/odds"
     params = {
         "apiKey": settings.ODDSAPI_KEY,
-        "regions": "us",
-        "markets": ",".join(SUPPORTED_MARKETS),
+        "regions": settings.ODDSAPI_REGIONS,
+        "markets": settings.ODDSAPI_MARKETS,
         "oddsFormat": "american"
     }
 

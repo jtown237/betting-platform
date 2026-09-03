@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRATION_HOURS: int = 720  # 30 days
     ODDSAPI_KEY: str
+    # Credit cost per request is markets x regions, and requests per day is
+    # driven by the interval, so all three are configurable without a deploy.
+    # Exchanges such as Kalshi are not in the "us" region; add "us_ex".
+    ODDSAPI_REGIONS: str = "us"
+    ODDSAPI_MARKETS: str = "h2h,spreads,totals"
+    ODDSAPI_POLL_MINUTES: int = 10
     ESPN_API_BASE: str = "https://site.api.espn.com/apis/site/v2"
     ENVIRONMENT: str = "development"
 
@@ -28,6 +34,13 @@ class Settings(BaseSettings):
         # SQLAlchemy 2.x dropped the legacy postgres:// scheme.
         if v.startswith("postgres://"):
             v = v.replace("postgres://", "postgresql://", 1)
+        return v
+
+    @field_validator("ODDSAPI_POLL_MINUTES")
+    @classmethod
+    def sane_poll_interval(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("ODDSAPI_POLL_MINUTES must be at least 1")
         return v
 
     @field_validator("JWT_SECRET", "ODDSAPI_KEY")
