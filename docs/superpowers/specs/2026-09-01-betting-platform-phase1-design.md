@@ -66,7 +66,9 @@ users
 ├── created_at
 ├── updated_at
 ├── initial_bankroll (decimal, required Phase 1 — user's starting amount)
-└── total_returns (decimal, calculated as sum of all payouts - initial_bankroll)
+└── total_returns (decimal, calculated as payouts - stakes over SETTLED bets only;
+                  roi_percent is total_returns / total staked, and both are 0
+                  when nothing has settled -- idle bankroll is not a loss)
 ```
 
 ### 3.2 Bets Table

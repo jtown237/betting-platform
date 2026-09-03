@@ -117,14 +117,13 @@ class TestUserProfile:
         data = response.json()
         assert data["email"] == "test@example.com"
         assert data["initial_bankroll"] == 1000.0
-        # No settled bets, so total_returns = sum of payouts - initial_bankroll = 0 - 1000 = -1000
-        assert data["total_returns"] == -1000.0
+        # Nothing staked yet, so there is nothing to have a return on.
+        assert data["total_returns"] == 0.0
         assert data["total_bets"] == 0
         assert data["bets_won"] == 0
         assert data["bets_lost"] == 0
         assert data["bets_push"] == 0
-        # ROI = -1000 / 1000 * 100 = -100.0
-        assert data["roi_percent"] == -100.0
+        assert data["roi_percent"] == 0.0
 
     def test_profile_with_bets(self, client, test_db):
         """Test profile endpoint with multiple bets."""
@@ -186,10 +185,12 @@ class TestUserProfile:
         assert data["bets_won"] == 1
         assert data["bets_lost"] == 1
         assert data["bets_push"] == 0
-        # total_returns = 190 + 0 - 1000 = -810
-        assert data["total_returns"] == -810.0
-        # roi = -810 / 1000 * 100 = -81.0
-        assert data["roi_percent"] == -81.0
+        # Settled: won (100 staked -> 190) and lost (50 staked -> 0).
+        # The 75 pending is excluded from both staked and payouts.
+        # returns = 190 - 150 = 40
+        assert data["total_returns"] == 40.0
+        # roi = 40 / 150 * 100
+        assert data["roi_percent"] == pytest.approx(26.6666666, rel=1e-6)
 
     def test_profile_with_push_bets(self, client, test_db):
         """Test profile endpoint with push bets."""
@@ -228,10 +229,44 @@ class TestUserProfile:
         assert response.status_code == 200
         data = response.json()
         assert data["bets_push"] == 1
-        # total_returns = 100 - 500 = -400
-        assert data["total_returns"] == -400.0
-        # roi = -400 / 500 * 100 = -80.0
-        assert data["roi_percent"] == -80.0
+        # A push returns the stake, so it nets exactly zero.
+        assert data["total_returns"] == 0.0
+        assert data["roi_percent"] == 0.0
+
+    def test_profile_only_pending_bets(self, client, test_db):
+        """Pending bets are counted but must not be treated as a loss."""
+        user = User(
+            email="test@example.com",
+            password_hash="$2b$12$test_hash",
+            initial_bankroll=1000.0
+        )
+        test_db.add(user)
+        test_db.commit()
+        test_db.refresh(user)
+
+        test_db.add(Bet(
+            user_id=user.id,
+            sportsbook="DraftKings",
+            bet_type="spread",
+            amount=200.0,
+            picked_side="Chiefs",
+            status=BetStatus.PENDING,
+            payout=None
+        ))
+        test_db.commit()
+
+        token = create_access_token(user.id)
+        response = client.get(
+            "/api/user/profile",
+            headers={"Authorization": f"Bearer {token}"}
+        )
+
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_bets"] == 1
+        # Nothing has settled, so no return has been realised either way.
+        assert data["total_returns"] == 0.0
+        assert data["roi_percent"] == 0.0
 
     def test_profile_positive_roi(self, client, test_db):
         """Test profile endpoint with positive ROI."""
@@ -269,9 +304,9 @@ class TestUserProfile:
 
         assert response.status_code == 200
         data = response.json()
-        # total_returns = 250 - 1000 = -750 (still negative overall)
-        # But if we had a larger winning bet:
-        assert data["total_returns"] == -750.0
+        # 100 staked returned 250, so profit is 150 on 100 staked.
+        assert data["total_returns"] == 150.0
+        assert data["roi_percent"] == pytest.approx(150.0)
 
 
 class TestHealthCheck:

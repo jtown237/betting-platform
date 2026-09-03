@@ -85,11 +85,15 @@ def get_profile(
         # Get all bets for the user
         bets = db.query(Bet).filter(Bet.user_id == user_id).all()
 
-        # Calculate statistics
-        total_returns = sum(b.payout or 0 for b in bets if b.status != BetStatus.PENDING)
-        net_returns = total_returns - user.initial_bankroll
+        # Returns and ROI are measured over what was actually staked, not over
+        # the whole bankroll: idle cash is not a loss, so a user with no
+        # settled bets reports 0.00 rather than their entire starting balance.
+        settled = [b for b in bets if b.status != BetStatus.PENDING]
+        total_staked = sum(b.amount for b in settled)
+        total_payouts = sum(b.payout or 0 for b in settled)
+        net_returns = total_payouts - total_staked
 
-        roi_percent = (net_returns / user.initial_bankroll * 100) if user.initial_bankroll > 0 else 0
+        roi_percent = (net_returns / total_staked * 100) if total_staked > 0 else 0.0
 
         won_count = len([b for b in bets if b.status == BetStatus.WON])
         lost_count = len([b for b in bets if b.status == BetStatus.LOST])
