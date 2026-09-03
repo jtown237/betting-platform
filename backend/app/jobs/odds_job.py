@@ -2,6 +2,8 @@
 """Background job for polling odds from OddsAPI every 10 minutes."""
 
 import logging
+from datetime import datetime, timezone
+
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from app.database import SessionLocal
@@ -50,7 +52,11 @@ def schedule_odds_polling(scheduler: AsyncIOScheduler):
             trigger=IntervalTrigger(minutes=10),
             id="poll_odds_job",
             name="Poll OddsAPI every 10 minutes",
-            replace_existing=True
+            replace_existing=True,
+            # Without this the first poll is one full interval away, so every
+            # redeploy restarts the clock and leaves the board empty for ten
+            # minutes.
+            next_run_time=datetime.now(timezone.utc)
         )
         logger.info("Odds polling job scheduled successfully")
     except Exception as e:
