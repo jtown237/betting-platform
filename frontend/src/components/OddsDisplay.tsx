@@ -12,6 +12,7 @@ interface GameOdds {
   odds: Array<{
     sportsbook: string;
     bet_type: string;
+    side: string | null;
     line: number;
     odds: number;
   }>;
@@ -142,17 +143,30 @@ export default function OddsDisplay({ sport }: OddsDisplayProps) {
 
                   {groupedOdds[book] && groupedOdds[book].length > 0 ? (
                     <div className="space-y-2 text-sm">
-                      {groupedOdds[book].map((odd, idx) => (
-                        <div key={idx} className="flex justify-between items-center">
-                          <span className="text-gray-600 dark:text-gray-400">
-                            {odd.bet_type === "moneyline" ? "ML" : odd.bet_type === "spread" ? "Spread" : "O/U"}
-                            {odd.line !== 0 ? ` ${odd.line > 0 ? "+" : ""}${odd.line}` : ""}
-                          </span>
-                          <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            {odd.odds > 0 ? "+" : ""}{odd.odds}
-                          </span>
-                        </div>
-                      ))}
+                      {groupedOdds[book].map((odd, idx) => {
+                        // side carries the team for moneyline and spread, and
+                        // already includes the number for totals ("Over 8.0").
+                        const label =
+                          odd.bet_type === "over_under"
+                            ? odd.side || "O/U"
+                            : odd.bet_type === "spread"
+                            ? `${odd.side || "Spread"} ${odd.line > 0 ? "+" : ""}${odd.line}`
+                            : odd.side || "ML";
+
+                        return (
+                          <div key={idx} className="flex justify-between items-center gap-2">
+                            <span
+                              className="text-gray-600 dark:text-gray-400 truncate min-w-0"
+                              title={label}
+                            >
+                              {label}
+                            </span>
+                            <span className="font-semibold text-gray-900 dark:text-gray-100 shrink-0">
+                              {odd.odds > 0 ? "+" : ""}{odd.odds}
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
                     <p className="text-xs text-gray-500 dark:text-gray-500">No odds available</p>

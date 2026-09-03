@@ -188,6 +188,26 @@ class TestMlbEndpoint:
 
         assert client.get("/api/odds/NFL").json()["count"] == 0
 
+    def test_odds_identify_which_team_they_belong_to(self, client, test_db):
+        """store_odds records `side`, but both serializers omitted it, so a
+        moneyline pair reached the dashboard as two numbers with no team."""
+        store_odds(test_db, live_shape_mlb_response(), "baseball_mlb")
+        test_db.commit()
+
+        odds = client.get("/api/odds/MLB").json()["games"][0]["odds"]
+
+        moneylines = [o for o in odds if o["bet_type"] == "moneyline"]
+        assert {o["side"] for o in moneylines} == {
+            "Los Angeles Dodgers",
+            "San Francisco Giants",
+        }
+
+        spreads = [o for o in odds if o["bet_type"] == "spread"]
+        assert all(o["side"] for o in spreads), "run lines have no team"
+
+        totals = [o for o in odds if o["bet_type"] == "over_under"]
+        assert {o["side"] for o in totals} == {"Over 8.5", "Under 8.5"}
+
     def test_get_odds_by_sport_filters_to_mlb(self, test_db):
         store_odds(test_db, live_shape_mlb_response(), "baseball_mlb")
         assert len(get_odds_by_sport(test_db, "MLB")) >= 1

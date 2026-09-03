@@ -309,6 +309,7 @@ def get_odds_by_sport(db: Session, sport: str) -> List[Dict[str, Any]]:
             game_dict["odds"].append({
                 "sportsbook": odd.sportsbook.value,
                 "bet_type": odd.bet_type.value,
+                "side": odd.side,
                 "line": odd.line,
                 "odds": odd.odds,
                 "timestamp": odd.timestamp.isoformat() if odd.timestamp else None
@@ -351,6 +352,7 @@ def get_odds_by_game_id(db: Session, game_id: str) -> Optional[Dict[str, Any]]:
         game_dict["odds"].append({
             "sportsbook": odd.sportsbook.value,
             "bet_type": odd.bet_type.value,
+            "side": odd.side,
             "line": odd.line,
             "odds": odd.odds,
             "timestamp": odd.timestamp.isoformat() if odd.timestamp else None
