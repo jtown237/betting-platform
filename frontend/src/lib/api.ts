@@ -14,6 +14,18 @@ export interface ApiError {
   data?: unknown;
 }
 
+/**
+ * FastAPI reports failures as {"detail": ...}, never {"error": ...}, so every
+ * backend message used to collapse to a bare status text like "Not Found".
+ * Validation errors arrive as an array, hence the stringify fallback.
+ */
+function extractError(data: any, response: Response): string {
+  const detail = data?.detail ?? data?.error;
+  if (typeof detail === "string") return detail;
+  if (detail) return JSON.stringify(detail);
+  return response.statusText || `Request failed with status ${response.status}`;
+}
+
 class ApiClient {
   private baseUrl: string;
 
@@ -47,7 +59,7 @@ class ApiClient {
       return {
         success: response.ok,
         data: response.ok ? data : undefined,
-        error: !response.ok ? data?.error || response.statusText : undefined,
+        error: !response.ok ? extractError(data, response) : undefined,
         status: response.status,
       };
     } catch (error) {
@@ -73,7 +85,7 @@ class ApiClient {
       return {
         success: response.ok,
         data: response.ok ? data : undefined,
-        error: !response.ok ? data?.error || response.statusText : undefined,
+        error: !response.ok ? extractError(data, response) : undefined,
         status: response.status,
       };
     } catch (error) {
@@ -99,7 +111,7 @@ class ApiClient {
       return {
         success: response.ok,
         data: response.ok ? data : undefined,
-        error: !response.ok ? data?.error || response.statusText : undefined,
+        error: !response.ok ? extractError(data, response) : undefined,
         status: response.status,
       };
     } catch (error) {
@@ -124,7 +136,7 @@ class ApiClient {
       return {
         success: response.ok,
         data: response.ok ? data : undefined,
-        error: !response.ok ? data?.error || response.statusText : undefined,
+        error: !response.ok ? extractError(data, response) : undefined,
         status: response.status,
       };
     } catch (error) {
