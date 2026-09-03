@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api";
 import { type Sport } from "@/lib/sports";
+import { formatCentral } from "@/lib/datetime";
 
 interface GameOdds {
   game_id: string;
@@ -91,21 +92,6 @@ export default function OddsDisplay({ sport }: OddsDisplayProps) {
     );
   }
 
-  const formatDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-        timeZone: "UTC",
-      });
-    } catch {
-      return dateString;
-    }
-  };
-
   // Group odds by sportsbook
   const groupByBook = (odds: GameOdds["odds"]) => {
     const grouped: Record<string, typeof odds> = {};
@@ -130,7 +116,7 @@ export default function OddsDisplay({ sport }: OddsDisplayProps) {
                 {game.away_team} @ {game.home_team}
               </h3>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                {formatDate(game.start_time)}
+                {formatCentral(game.start_time)}
               </p>
             </div>
 

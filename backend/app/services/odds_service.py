@@ -8,6 +8,7 @@ from typing import Dict, List, Any, Optional, Union
 from sqlalchemy.orm import Session
 from app.models import Game, Odds, Sport, Sportsbook, BetType, GameStatus
 from app.config import get_settings
+from app.timeutil import utc_iso
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +301,7 @@ def get_odds_by_sport(db: Session, sport: str) -> List[Dict[str, Any]]:
             "sport": game.sport.value,
             "home_team": game.home_team,
             "away_team": game.away_team,
-            "start_time": game.start_time.isoformat(),
+            "start_time": utc_iso(game.start_time),
             "status": game.status.value,
             "odds": []
         }
@@ -312,7 +313,7 @@ def get_odds_by_sport(db: Session, sport: str) -> List[Dict[str, Any]]:
                 "side": odd.side,
                 "line": odd.line,
                 "odds": odd.odds,
-                "timestamp": odd.timestamp.isoformat() if odd.timestamp else None
+                "timestamp": utc_iso(odd.timestamp)
             })
 
         result.append(game_dict)
@@ -341,7 +342,7 @@ def get_odds_by_game_id(db: Session, game_id: str) -> Optional[Dict[str, Any]]:
         "sport": game.sport.value,
         "home_team": game.home_team,
         "away_team": game.away_team,
-        "start_time": game.start_time.isoformat(),
+        "start_time": utc_iso(game.start_time),
         "final_score_home": game.final_score_home,
         "final_score_away": game.final_score_away,
         "status": game.status.value,
@@ -355,7 +356,7 @@ def get_odds_by_game_id(db: Session, game_id: str) -> Optional[Dict[str, Any]]:
             "side": odd.side,
             "line": odd.line,
             "odds": odd.odds,
-            "timestamp": odd.timestamp.isoformat() if odd.timestamp else None
+            "timestamp": utc_iso(odd.timestamp)
         })
 
     return game_dict

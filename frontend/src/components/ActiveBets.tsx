@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api";
+import { formatCentral } from "@/lib/datetime";
 
 interface ActiveBet {
   bet_id: number;
@@ -42,21 +43,6 @@ export default function ActiveBets() {
 
     fetchActiveBets();
   }, []);
-
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      });
-    } catch {
-      return dateString;
-    }
-  };
 
   if (loading) {
     return (
@@ -139,7 +125,7 @@ export default function ActiveBets() {
                   {bet.sportsbook || "-"}
                 </td>
                 <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-xs">
-                  {formatDate(bet.created_at)}
+                  {formatCentral(bet.created_at)}
                 </td>
               </tr>
             ))}

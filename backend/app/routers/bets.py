@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from jose import JWTError
 
 from app.database import get_db
+from app.timeutil import utc_iso
 from app.auth import verify_token
 from app.models import Bet, BetStatus
 from app.schemas import BetCreate, BetCreateCustom, BetResponse, BetSettle
@@ -93,7 +94,7 @@ def place_bet(
             amount=bet.amount,
             picked_side=bet.picked_side,
             odds_locked_at=bet.odds_locked_at,
-            created_at=bet.created_at.isoformat() if bet.created_at else None,
+            created_at=utc_iso(bet.created_at),
             game_id=bet.game_id,
             sportsbook=bet.sportsbook.value,
             bet_type=bet.bet_type.value
@@ -147,7 +148,7 @@ def place_custom_bet(
             amount=bet.amount,
             picked_side=bet.picked_side,
             odds_locked_at=bet.odds_locked_at,
-            created_at=bet.created_at.isoformat() if bet.created_at else None,
+            created_at=utc_iso(bet.created_at),
             notes=bet.notes,
             sportsbook=bet.sportsbook.value,
             bet_type=bet.bet_type.value
@@ -195,8 +196,8 @@ def get_active_bets(
                 picked_side=bet.picked_side,
                 odds_locked_at=bet.odds_locked_at,
                 payout=bet.payout,
-                created_at=bet.created_at.isoformat() if bet.created_at else None,
-                settled_at=bet.settled_at.isoformat() if bet.settled_at else None,
+                created_at=utc_iso(bet.created_at),
+                settled_at=utc_iso(bet.settled_at),
                 notes=bet.notes,
                 game_id=bet.game_id,
                 sportsbook=bet.sportsbook.value if bet.sportsbook else None,
@@ -241,8 +242,8 @@ def get_bet_history(
                 picked_side=bet.picked_side,
                 odds_locked_at=bet.odds_locked_at,
                 payout=bet.payout,
-                created_at=bet.created_at.isoformat() if bet.created_at else None,
-                settled_at=bet.settled_at.isoformat() if bet.settled_at else None,
+                created_at=utc_iso(bet.created_at),
+                settled_at=utc_iso(bet.settled_at),
                 notes=bet.notes,
                 game_id=bet.game_id,
                 sportsbook=bet.sportsbook.value if bet.sportsbook else None,
@@ -297,8 +298,8 @@ def get_bet(
             picked_side=bet.picked_side,
             odds_locked_at=bet.odds_locked_at,
             payout=bet.payout,
-            created_at=bet.created_at.isoformat() if bet.created_at else None,
-            settled_at=bet.settled_at.isoformat() if bet.settled_at else None,
+            created_at=utc_iso(bet.created_at),
+            settled_at=utc_iso(bet.settled_at),
             notes=bet.notes,
             game_id=bet.game_id,
             sportsbook=bet.sportsbook.value if bet.sportsbook else None,
@@ -352,8 +353,8 @@ def settle_bet(
             picked_side=bet.picked_side,
             odds_locked_at=bet.odds_locked_at,
             payout=bet.payout,
-            created_at=bet.created_at.isoformat() if bet.created_at else None,
-            settled_at=bet.settled_at.isoformat() if bet.settled_at else None,
+            created_at=utc_iso(bet.created_at),
+            settled_at=utc_iso(bet.settled_at),
             notes=bet.notes,
             sportsbook=bet.sportsbook.value if bet.sportsbook else None,
             bet_type=bet.bet_type.value if bet.bet_type else None

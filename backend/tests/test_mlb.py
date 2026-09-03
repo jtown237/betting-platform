@@ -182,6 +182,16 @@ class TestMlbEndpoint:
         assert body["count"] >= 1
         assert body["games"][0]["home_team"] == "Los Angeles Dodgers"
 
+    def test_times_are_served_with_an_explicit_utc_offset(self, client, test_db):
+        """An offset-less timestamp is parsed as local time by JavaScript."""
+        store_odds(test_db, live_shape_mlb_response(), "baseball_mlb")
+        test_db.commit()
+
+        game = client.get("/api/odds/MLB").json()["games"][0]
+        # Fixture commence_time is 2026-09-03T23:10:00Z (6:10pm CDT).
+        assert game["start_time"] == "2026-09-03T23:10:00+00:00"
+        assert all(o["timestamp"].endswith("+00:00") for o in game["odds"])
+
     def test_mlb_odds_are_not_returned_for_nfl(self, client, test_db):
         store_odds(test_db, live_shape_mlb_response(), "baseball_mlb")
         test_db.commit()
