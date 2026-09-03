@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { apiClient } from "@/lib/api";
+import { type Sport } from "@/lib/sports";
 
 interface GameOdds {
   game_id: string;
@@ -23,7 +24,7 @@ interface OddsResponse {
 }
 
 interface OddsDisplayProps {
-  sport: "NFL" | "CFB";
+  sport: Sport;
 }
 
 export default function OddsDisplay({ sport }: OddsDisplayProps) {

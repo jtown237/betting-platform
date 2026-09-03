@@ -47,7 +47,7 @@ class Bet(Base):
 
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    game_id = Column(String(20), ForeignKey("games.id"), nullable=True)
+    game_id = Column(String(64), ForeignKey("games.id"), nullable=True)
     sportsbook = Column(Enum(Sportsbook), nullable=False)
     bet_type = Column(Enum(BetType), nullable=False)
     amount = Column(Float, nullable=False)
@@ -66,6 +66,7 @@ class Bet(Base):
 class Sport(str, enum.Enum):
     NFL = "NFL"
     CFB = "CFB"
+    MLB = "MLB"
 
 class GameStatus(str, enum.Enum):
     SCHEDULED = "scheduled"
@@ -75,7 +76,7 @@ class GameStatus(str, enum.Enum):
 class Game(Base):
     __tablename__ = "games"
 
-    id = Column(String(20), primary_key=True)
+    id = Column(String(64), primary_key=True)
     sport = Column(Enum(Sport), nullable=False)
     home_team = Column(String(100), nullable=False)
     away_team = Column(String(100), nullable=False)
@@ -93,7 +94,7 @@ class Odds(Base):
     __tablename__ = "odds"
 
     id = Column(Integer, primary_key=True)
-    game_id = Column(String(20), ForeignKey("games.id"), nullable=False)
+    game_id = Column(String(64), ForeignKey("games.id"), nullable=False)
     sportsbook = Column(Enum(Sportsbook), nullable=False)
     bet_type = Column(Enum(BetType), nullable=False)
     line = Column(Float, nullable=False)

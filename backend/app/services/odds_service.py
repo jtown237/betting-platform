@@ -4,7 +4,7 @@
 import requests
 import logging
 from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 from sqlalchemy.orm import Session
 from app.models import Game, Odds, Sport, Sportsbook, BetType, GameStatus
 from app.config import get_settings
@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 # Mapping of OddsAPI sport keys to our Sport enum
 SPORT_MAPPING = {
     "americanfootball_nfl": Sport.NFL,
-    "americanfootball_ncaaf": Sport.CFB
+    "americanfootball_ncaaf": Sport.CFB,
+    "baseball_mlb": Sport.MLB
 }
 
 # Mapping of OddsAPI sportsbook keys to our Sportsbook enum
@@ -33,7 +34,7 @@ def fetch_odds_from_api(sport: str) -> Dict[str, Any]:
     Fetch odds from OddsAPI for a given sport.
 
     Args:
-        sport: Sport key (e.g., "americanfootball_nfl", "americanfootball_ncaaf")
+        sport: Sport key (e.g., "americanfootball_nfl", "baseball_mlb")
 
     Returns:
         Dict containing games and their odds
@@ -139,14 +140,32 @@ def _parse_total_odds(game_data: Dict[str, Any], bookmaker: Dict[str, Any]) -> L
     return results
 
 
-def store_odds(db: Session, odds_data: Dict[str, Any], sport: str) -> int:
+def _extract_games(odds_data: Union[Dict[str, Any], List[Dict[str, Any]]]) -> List[Dict[str, Any]]:
+    """
+    Normalise an OddsAPI odds payload to a list of events.
+
+    The live endpoint returns a bare JSON array. Accept the {"games": [...]}
+    object form too, which is what the fixtures use.
+    """
+    if isinstance(odds_data, list):
+        return odds_data
+    if isinstance(odds_data, dict):
+        return odds_data.get("games", [])
+    return []
+
+
+def store_odds(
+    db: Session,
+    odds_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+    sport: str,
+) -> int:
     """
     Store odds in the database with upsert logic (latest odds only, no history).
 
     Args:
         db: Database session
         odds_data: Response from OddsAPI
-        sport: Sport key (e.g., "americanfootball_nfl", "americanfootball_ncaaf")
+        sport: Sport key (e.g., "americanfootball_nfl", "baseball_mlb")
 
     Returns:
         Number of odds records stored/updated
@@ -158,7 +177,7 @@ def store_odds(db: Session, odds_data: Dict[str, Any], sport: str) -> int:
         raise ValueError(f"Unsupported sport: {sport}")
 
     sport_enum = SPORT_MAPPING[sport]
-    games = odds_data.get("games", [])
+    games = _extract_games(odds_data)
     odds_count = 0
 
     for game_data in games:
@@ -262,7 +281,7 @@ def get_odds_by_sport(db: Session, sport: str) -> List[Dict[str, Any]]:
 
     Args:
         db: Database session
-        sport: Sport value ("NFL" or "CFB")
+        sport: Sport value ("NFL", "CFB" or "MLB")
 
     Returns:
         List of game dicts with embedded odds

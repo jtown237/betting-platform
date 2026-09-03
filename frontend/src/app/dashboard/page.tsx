@@ -7,8 +7,7 @@ import Navigation from "@/components/Navigation";
 import UserProfile from "@/components/UserProfile";
 import OddsDisplay from "@/components/OddsDisplay";
 import ActiveBets from "@/components/ActiveBets";
-
-type Sport = "NFL" | "CFB";
+import { SPORTS, type Sport } from "@/lib/sports";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -52,7 +51,7 @@ export default function Dashboard() {
           <section>
             <div className="mb-6">
               <div className="flex items-center gap-4 border-b border-gray-200 dark:border-gray-800">
-                {(["NFL", "CFB"] as const).map((s) => (
+                {SPORTS.map((s) => (
                   <button
                     key={s}
                     onClick={() => setSport(s)}

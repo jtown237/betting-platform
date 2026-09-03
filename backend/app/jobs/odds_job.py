@@ -14,7 +14,8 @@ logger = logging.getLogger(__name__)
 # Sports to poll
 SPORTS_TO_POLL = [
     "americanfootball_nfl",
-    "americanfootball_ncaaf"
+    "americanfootball_ncaaf",
+    "baseball_mlb"
 ]
 
 

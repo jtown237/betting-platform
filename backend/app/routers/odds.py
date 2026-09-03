@@ -18,7 +18,7 @@ def get_odds_for_sport(sport: str, db: Session = Depends(get_db)):
     Get all games with their odds for a given sport.
 
     Args:
-        sport: Sport name ("NFL" or "CFB")
+        sport: Sport name ("NFL", "CFB" or "MLB")
         db: Database session
 
     Returns:

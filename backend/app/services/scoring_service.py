@@ -14,22 +14,26 @@ def utc_now():
     """Return current UTC time as timezone-aware datetime."""
     return datetime.now(timezone.utc)
 
+# ESPN groups its scoreboards by league path. Keys are the lowercased
+# Sport enum values, since callers pass game.sport.value.lower().
+ESPN_SPORT_PATHS = {
+    "nfl": "sports/football/nfl",
+    "cfb": "sports/football/college-football",
+    "mlb": "sports/baseball/mlb",
+}
+
 def fetch_game_score(game_id: str, sport: str = "nfl") -> dict:
     """
     Fetch game score from ESPN API.
 
     Args:
         game_id: The ESPN game ID
-        sport: Sport type - "nfl" or "cfb" (college football)
+        sport: Sport type - "nfl", "cfb" (college football) or "mlb"
 
     Returns a dict with: {home_score, away_score, status}
     """
     # Route to correct ESPN API endpoint based on sport
-    if sport.lower() == "cfb":
-        sport_path = "sports/football/college-football"
-    else:
-        # Default to NFL
-        sport_path = "sports/football/nfl"
+    sport_path = ESPN_SPORT_PATHS.get(sport.lower(), ESPN_SPORT_PATHS["nfl"])
 
     url = f"{settings.ESPN_API_BASE}/{sport_path}/games/{game_id}"
     try:
